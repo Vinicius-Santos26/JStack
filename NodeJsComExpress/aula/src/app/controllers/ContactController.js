@@ -14,7 +14,7 @@ class ContactController {
 
     if (!contact) {
       // 404: Not found
-      return response.status(404).json({ error: 'User not found' });
+      return response.status(404).json({ error: 'Contact not found' });
     }
 
     response.json(contact);
