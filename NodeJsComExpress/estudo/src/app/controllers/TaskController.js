@@ -2,7 +2,8 @@ const TaskRepository = require('../repositories/TaskRepository');
 
 class TaskController {
   async index(request, response) {
-    const tasks = await TaskRepository.findAll();
+    const {orderBy} = request.query;
+    const tasks = await TaskRepository.findAll(orderBy);
     response.json(tasks);
   }
 

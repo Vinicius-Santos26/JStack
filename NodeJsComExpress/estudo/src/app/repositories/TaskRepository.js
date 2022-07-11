@@ -1,76 +1,61 @@
-const {v4} = require('uuid');
-
-let tasks = [
-  {
-    id: v4(),
-    title: 'Estudar NodeJs',
-    description: 'Praticar criacao de api com express',
-    status_id: v4(),
-  },
-  {
-    id: v4(),
-    title: 'Estudar .NET',
-    description: 'Praticar criacao de api com .Net',
-    status_id: v4(),
-  },
-];
+const db = require('../../database');
 
 class TaskRepository {
-  findAll() {
-    return new Promise((resolve) => {
-      resolve(tasks);
-    });
+  async findAll(orderBy = 'ASC') {
+    const direction = orderBy.toUpperCase() === 'DESC'? 'DESC' : 'ASC';
+
+    const rows = await db.query(`
+      SELECT tasks.*, status.name as status_name
+      FROM tasks
+      LEFT JOIN status on status.id = tasks.status_id
+      ORDER BY title ${direction}
+    `);
+    return rows;
   }
 
-  findById(id) {
-    return new Promise((resolve) => {
-      const task = tasks.find((taskObj) => taskObj.id === id);
-      resolve(task);
-    });
+  async findById(id) {
+    const [row] = await db.query(`
+      SELECT tasks.*, status.name as status_name
+      FROM tasks
+      LEFT JOIN status on status.id = tasks.status_id
+      WHERE tasks.id = $1
+    `, [id]);
+    return row;
   }
 
-  findByTitle(title) {
-    return new Promise((resolve) => {
-      const task = tasks.find((taskObj) => taskObj.title === title);
-      resolve(task);
-    });
+  async findByTitle(title) {
+    const [row] = await db.query(`
+      SELECT * FROM tasks WHERE title = $1
+    `, [title]);
+    return row;
   }
 
-  create({title, description, status_id}) {
-    return new Promise((resolve) => {
-      const newTask = {
-        id: v4(),
-        title,
-        description,
-        status_id,
-      };
+  async create({title, description, status_id}) {
+    const [row] = await db.query(`
+      INSERT INTO tasks (title, description, status_id)
+      VALUES ($1, $2, $3)
+      RETURNING *
+      `, [title, description, status_id]);
 
-      tasks.push(newTask);
-
-      resolve(newTask);
-    });
+    return row;
   }
 
-  update(id, {title, description, status_id}) {
-    return new Promise((resolve) => {
-      const updatedTask = {
-        id: id,
-        title,
-        description,
-        status_id,
-      };
+  async update(id, {title, description, status_id}) {
+    const [row] = await db.query(`
+      UPDATE tasks
+      SET title = $1, description = $2, status_id = $3
+      WHERE id = $4
+      RETURNING *
+    `, [title, description, status_id, id]);
 
-      tasks = tasks.map((task) => task.id === id ? updatedTask : task);
-
-      resolve(updatedTask);
-    });
+    return row;
   }
 
-  delete(id) {
-    return new Promise((resolve) => {
-      tasks = tasks.filter((task) => task.id !== id);
-      resolve();
-    });
+  async delete(id) {
+    const deleteOp = await db.query(`
+      DELETE FROM tasks WHERE id = $1
+    `, [id]);
+    return deleteOp;
   }
 }
 
