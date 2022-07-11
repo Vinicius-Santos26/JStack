@@ -30,6 +30,13 @@ class CategoryController {
       return response.status(400).json({ error: 'Name is required' });
     }
 
+    const categoryExists = await CategoryRepository.findByName(name);
+
+    if (categoryExists) {
+      // 400: Bad Request
+      return response.status(400).json({ error: 'This name is already in use' });
+    }
+
     const category = await CategoryRepository.create({ name });
 
     response.json(category);
